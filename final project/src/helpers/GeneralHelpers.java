@@ -5,15 +5,11 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.Scanner;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
+import java.util.Scanner;
 import model.Tokenizer;
 
 public class GeneralHelpers {
@@ -356,74 +352,89 @@ public class GeneralHelpers {
     }
 
     public static void deleteInfo(ArrayList<String> query) {
-    String nameofTable = query.get(2); 
-    String path = "src/myTables/";
-    File sourceFile = new File(path, nameofTable.trim() + ".csv");
-
-    System.out.println("Ruta del archivo: " + sourceFile.getAbsolutePath());
-
-    try {
-       
-        Condition condition = parseWhere(query);
-
-        
-        Scanner scanner = new Scanner(sourceFile);
-        String headline = scanner.nextLine();
-        System.out.println("Encabezado: " + headline);
-        String[] columns = headline.split(",");
-
-        int columnIndex = -1;
-
-        for (int i = 0; i < columns.length; i++) {
-            if (columns[i].trim().equalsIgnoreCase(condition.column)) {
-                columnIndex = i;
-                break;
-            }
-        }
-
-        if (columnIndex == -1) {
-            System.err.println("La columna especificada en WHERE no existe.");
-            scanner.close();
+        String nameofTable = query.get(2).trim(); // Asegurar que no haya espacios extra
+        String path = "src/myTables/";
+        File sourceFile = new File(path, nameofTable + ".csv");
+    
+        System.out.println("Ruta del archivo: " + sourceFile.getAbsolutePath());
+    
+        if (!sourceFile.exists()) {
+            System.err.println("La tabla especificada no existe.");
             return;
         }
-
-        List<String> updatedLines = new ArrayList<>();
-        updatedLines.add(headline); 
-
-        while (scanner.hasNextLine()) {
-            String line = scanner.nextLine();
-            String[] rowData = line.split(",");
-            
-            
-            Map<String, String> row = new HashMap<>();
+    
+        try {
+           
+            Condition condition = parseWhere(query);
+    
+           
+            Scanner scanner = new Scanner(sourceFile);
+            String headline = scanner.nextLine(); 
+            System.out.println("Encabezado: " + headline);
+            String[] columns = headline.split(",");
+    
+            int columnIndex = -1;
+    
+          
             for (int i = 0; i < columns.length; i++) {
-                row.put(columns[i].trim(), rowData[i].trim());
+                if (columns[i].trim().equalsIgnoreCase(condition.column)) {
+                    columnIndex = i;
+                    break;
+                }
             }
+    
+            if (columnIndex == -1) {
+                System.err.println("La columna especificada en WHERE no existe.");
+                scanner.close();
+                return;
+            }
+    
+            List<String> updatedLines = new ArrayList<>();
+            updatedLines.add(headline.trim()); 
 
            
-            if (!evaluate(condition, row)) {
-                updatedLines.add(line); 
-            } else {
-                System.out.println("Fila eliminada: " + line);
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine().trim(); 
+                if (line.isEmpty()) {
+                    continue; 
+                }
+    
+                String[] rowData = line.split(",");
+    
+                
+                Map<String, String> row = new HashMap<>();
+                for (int i = 0; i < columns.length; i++) {
+                    row.put(columns[i].trim(), rowData[i].trim());
+                }
+    
+               
+                if (!evaluate(condition, row)) {
+                    updatedLines.add(line.trim()); 
+                } else {
+                    System.out.println("Fila eliminada: " + line);
+                }
             }
-        }
-
-        scanner.close();
-
-  
-        try (FileWriter writer = new FileWriter(sourceFile)) {
-            for (String updatedLine : updatedLines) {
-                writer.write(updatedLine + "\n");
+    
+            scanner.close();
+    
+          
+            try (FileWriter writer = new FileWriter(sourceFile)) {
+                for (int i = 0; i < updatedLines.size(); i++) {
+                    writer.write(updatedLines.get(i));
+                    if (i < updatedLines.size() - 1) {
+                        writer.write("\n");
+                    }
+                }
+                System.out.println("Archivo actualizado con éxito.");
+            } catch (IOException e) {
+                System.err.println("Error escribiendo el archivo: " + e.getMessage());
             }
-            System.out.println("Archivo actualizado con éxito.");
-        } catch (IOException e) {
-            System.err.println("Error escribiendo el archivo: " + e.getMessage());
+    
+        } catch (Exception e) {
+            System.err.println("Error procesando el archivo: " + e.getMessage());
         }
-
-    } catch (Exception e) {
-        System.err.println("Error procesando el archivo: " + e.getMessage());
     }
-}
+    
 
         
            

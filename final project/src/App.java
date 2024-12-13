@@ -1,10 +1,6 @@
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
-
 import conditions.Cases;
 import helpers.GeneralHelpers;
+import java.util.ArrayList;
 
 public class App {
     public static void main(String[] args) throws Exception {
@@ -36,7 +32,12 @@ public class App {
 
             }
 
-            System.out.println(query);
+            if(query.get(0).equalsIgnoreCase("select")){
+
+                GeneralHelpers.selectInfo(query);
+
+            }
+
             
 
             String joinedStrings = String.join("", query);
@@ -44,9 +45,9 @@ public class App {
                GeneralHelpers.clearConsole();
             }  
 
-            }
+        }
 
-            }
+     }
 
          
 }

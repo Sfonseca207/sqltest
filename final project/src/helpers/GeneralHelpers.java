@@ -352,11 +352,10 @@ public class GeneralHelpers {
     }
 
     public static void deleteInfo(ArrayList<String> query) {
+
         String nameofTable = query.get(2).trim(); // Asegurar que no haya espacios extra
         String path = "src/myTables/";
         File sourceFile = new File(path, nameofTable + ".csv");
-    
-        System.out.println("Ruta del archivo: " + sourceFile.getAbsolutePath());
     
         if (!sourceFile.exists()) {
             System.err.println("La tabla especificada no existe.");
@@ -430,9 +429,91 @@ public class GeneralHelpers {
                 System.err.println("Error escribiendo el archivo: " + e.getMessage());
             }
     
+
+
+
+
+
+
+
+             
+             
         } catch (Exception e) {
             System.err.println("Error procesando el archivo: " + e.getMessage());
         }
+    }
+
+    public static void selectInfo(ArrayList<String> query) {
+    
+        String nameofTable = query.get(3).trim(); // Nombre de la tabla (hawk en este caso)
+        String path = "src/myTables/";
+        File sourceFile = new File(path, nameofTable + ".csv");
+
+        if (!sourceFile.exists()) {
+            System.err.println("La tabla especificada no existe.");
+            return;
+        }
+
+        try {
+            // Leer el archivo
+            Scanner scanner = new Scanner(sourceFile);
+            String headline = scanner.nextLine(); // Leer el encabezado
+            String[] columns = headline.split(",");
+
+            // Manejar el caso de '*'
+            List<String> selectedColumns = new ArrayList<>();
+            if (query.get(1).equals("*")) {
+                selectedColumns.addAll(List.of(columns)); // Selecciona todas las columnas
+            } else {
+                // Seleccionar columnas específicas
+                for (int i = 1; i < query.size(); i++) {
+                    String column = query.get(i).trim();
+                    if (column.equalsIgnoreCase("from")) {
+                        break; // Detenerse al llegar a 'from'
+                    }
+                    selectedColumns.add(column);
+                }
+            }
+
+            // Manejar condición WHERE
+            Condition condition = null;
+            if (query.contains("where")) {
+                condition = parseWhere(query);
+            }
+
+            // Imprimir encabezado de las columnas seleccionadas
+            StringBuilder headerOutput = new StringBuilder();
+            for (String col : selectedColumns) {
+                headerOutput.append(col).append(",");
+            }
+            System.out.println(headerOutput.substring(0, headerOutput.length() - 1));
+
+            // Procesar cada fila
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine();
+                String[] rowData = line.split(",");
+
+                // Crear mapa para asociar columna -> valor
+                Map<String, String> row = new HashMap<>();
+                for (int i = 0; i < columns.length; i++) {
+                    row.put(columns[i].trim(), rowData[i].trim());
+                }
+
+                // Evaluar condición WHERE (si existe)
+                if (condition == null || evaluate(condition, row)) {
+                    StringBuilder rowOutput = new StringBuilder();
+                    for (String column : selectedColumns) {
+                        rowOutput.append(row.get(column)).append(",");
+                    }
+                    System.out.println(rowOutput.substring(0, rowOutput.length() - 1));
+                }
+            }
+
+            scanner.close();
+        } catch (Exception e) {
+            System.err.println("Error procesando el archivo: " + e.getMessage());
+        }
+
     }
     
 
